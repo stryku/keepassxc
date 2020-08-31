@@ -41,7 +41,6 @@ public:
     QStringList windowTitles();
     bool registerGlobalShortcut(Qt::Key key, Qt::KeyboardModifiers modifiers);
     void unregisterGlobalShortcut();
-    int callEventFilter(void* event);
     static bool checkSyntax(const QString& string);
     static bool checkHighRepetition(const QString& string);
     static bool checkSlowKeypress(const QString& string);
@@ -99,8 +98,6 @@ private:
     QMutex m_inAutoType;
     QMutex m_inGlobalAutoTypeDialog;
     int m_autoTypeDelay;
-    Qt::Key m_currentGlobalKey;
-    Qt::KeyboardModifiers m_currentGlobalModifiers;
     QPluginLoader* m_pluginLoader;
     AutoTypePlatformInterface* m_plugin;
     AutoTypeExecutor* m_executor;

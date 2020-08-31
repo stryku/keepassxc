@@ -23,6 +23,9 @@
 #include <QAbstractNativeEventFilter>
 #include <QPointer>
 #include <QScopedPointer>
+#include <QSharedPointer>
+
+#include <windef.h>
 
 class WinUtils : public OSUtilsBase
 {
@@ -38,9 +41,17 @@ public:
     bool isCapslockEnabled() override;
     bool isHighContrastMode() const;
 
+    bool registerGlobalShortcut(const QString& name, Qt::Key key, Qt::KeyboardModifiers modifiers) override;
+    bool unregisterGlobalShortcut(const QString& name) override;
+
+    DWORD qtToNativeKeyCode(Qt::Key key);
+    DWORD qtToNativeModifiers(Qt::KeyboardModifiers modifiers);
+
 protected:
     explicit WinUtils(QObject* parent = nullptr);
     ~WinUtils() override;
+
+    void triggerGlobalShortcut(int id);
 
 private:
     class DWMEventFilter : public QAbstractNativeEventFilter
@@ -51,6 +62,15 @@ private:
 
     static QPointer<WinUtils> m_instance;
     static QScopedPointer<DWMEventFilter> m_eventFilter;
+
+    struct globalShortcut {
+        int id;
+        DWORD nativeKeyCode;
+        DWORD nativeModifiers;
+    };
+
+    int m_nextShortcutId = 1;
+    QHash<QString, QSharedPointer<globalShortcut>> m_globalShortcuts;
 
     Q_DISABLE_COPY(WinUtils)
 };

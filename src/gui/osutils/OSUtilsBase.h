@@ -50,6 +50,12 @@ public:
      */
     virtual bool isCapslockEnabled() = 0;
 
+    virtual bool registerGlobalShortcut(const QString& name, Qt::Key key, Qt::KeyboardModifiers modifiers) = 0;
+    virtual bool unregisterGlobalShortcut(const QString& name) = 0;
+
+signals:
+    void globalShortcutTriggered(const QString& name);
+
 protected:
     explicit OSUtilsBase(QObject* parent = nullptr);
     virtual ~OSUtilsBase();
