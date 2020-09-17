@@ -62,6 +62,8 @@ private slots:
     void systrayToggled(bool checked);
     void rememberDatabasesToggled(bool checked);
     void checkUpdatesToggled(bool checked);
+    void selectHibpFileToBePreparedByOkon();
+    void okonPreparationProgressChanged(int percentage);
 
 private:
     QWidget* const m_secWidget;

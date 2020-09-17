@@ -17,6 +17,7 @@
  */
 
 #include "ApplicationSettingsWidget.h"
+#include "OkonPreparer.h"
 #include "ui_ApplicationSettingsWidgetGeneral.h"
 #include "ui_ApplicationSettingsWidgetSecurity.h"
 
@@ -32,6 +33,9 @@
 
 #include "MessageBox.h"
 #include "touchid/TouchID.h"
+
+#include <QFileDialog>
+#include <QtConcurrent>
 
 class ApplicationSettingsWidget::ExtraPage
 {
@@ -88,6 +92,7 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
     , m_globalAutoTypeKey(static_cast<Qt::Key>(0))
     , m_globalAutoTypeModifiers(Qt::NoModifier)
 {
+
     setHeadline(tr("Application Settings"));
     showApplyButton(false);
 
@@ -109,6 +114,7 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
     connect(m_generalUi->systrayShowCheckBox, SIGNAL(toggled(bool)), SLOT(systrayToggled(bool)));
     connect(m_generalUi->rememberLastDatabasesCheckBox, SIGNAL(toggled(bool)), SLOT(rememberDatabasesToggled(bool)));
     connect(m_generalUi->resetSettingsButton, SIGNAL(clicked()), SLOT(resetSettings()));
+    connect(m_generalUi->okonSelectHibpPasswordsFileToPreparepushButton, SIGNAL(clicked()), SLOT(selectHibpFileToBePreparedByOkon()));
 
     connect(m_secUi->clearClipboardCheckBox, SIGNAL(toggled(bool)),
             m_secUi->clearClipboardSpinBox, SLOT(setEnabled(bool)));
@@ -118,6 +124,8 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
             m_secUi->lockDatabaseIdleSpinBox, SLOT(setEnabled(bool)));
     connect(m_secUi->touchIDResetCheckBox, SIGNAL(toggled(bool)),
             m_secUi->touchIDResetSpinBox, SLOT(setEnabled(bool)));
+
+
     // clang-format on
 
     // Disable mouse wheel grab when scrolling
@@ -152,10 +160,17 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
         m_secUi->touchIDResetSpinBox->setVisible(false);
         m_secUi->touchIDResetOnScreenLockCheckBox->setVisible(false);
     }
+
+
+    m_generalUi->okonPreparationProgressLabel->setVisible(false);
+    m_generalUi->okonPreparationprogressBar->setVisible(false);
+    m_generalUi->okonCurrentFileLabel->setVisible(false);
 }
 
 ApplicationSettingsWidget::~ApplicationSettingsWidget()
 {
+    int a = 2;
+    (void)a;
 }
 
 void ApplicationSettingsWidget::addSettingsPage(ISettingsPage* page)
@@ -489,4 +504,42 @@ void ApplicationSettingsWidget::rememberDatabasesToggled(bool checked)
 void ApplicationSettingsWidget::checkUpdatesToggled(bool checked)
 {
     m_generalUi->checkForUpdatesIncludeBetasCheckBox->setEnabled(checked);
+}
+
+void ApplicationSettingsWidget::selectHibpFileToBePreparedByOkon()
+{
+    const auto file = QFileDialog::getOpenFileName(this, "Select HIBP passwords file to be prepared", ".");
+    if(file.isEmpty())
+    {
+        return;
+    }
+
+    auto preparer = new OkonPreparer{ file, this };
+
+    QObject::connect(preparer,
+                     &OkonPreparer::progressChanged,
+                     this, &ApplicationSettingsWidget::okonPreparationProgressChanged,
+                     Qt::QueuedConnection);
+
+    QThreadPool::globalInstance()->start(preparer);
+}
+
+void ApplicationSettingsWidget::okonPreparationProgressChanged(int percentage)
+{
+    m_generalUi->okonPreparationProgressLabel->setVisible(true);
+
+    if (percentage == 0) {
+        m_generalUi->okonPreparationProgressLabel->setText("Calculating preparation work...");
+        m_generalUi->okonPreparationprogressBar->setVisible(false);
+    } else {
+        m_generalUi->okonPreparationprogressBar->setVisible(true);
+        m_generalUi->okonPreparationProgressLabel->setText("Preparation progress:");
+    }
+
+    m_generalUi->okonPreparationprogressBar->setValue(percentage);
+
+    if(percentage == 100) {
+        m_generalUi->okonCurrentFileLabel->setVisible(true);
+        m_generalUi->okonCurrentFileLabel->setText("Okon prepared file: \'passwords.okon\'");
+    }
 }

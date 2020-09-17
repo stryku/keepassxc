@@ -110,6 +110,7 @@ private slots:
     void useExpiryPreset(QAction* action);
     void toggleHideNotes(bool visible);
     void pickColor();
+    void performPasswordBreachCheck();
 #ifdef WITH_XC_SSHAGENT
     void toKeeAgentSettings(KeeAgentSettings& settings) const;
     void setSSHAgentSettings();

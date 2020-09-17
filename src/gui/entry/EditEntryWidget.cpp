@@ -35,6 +35,7 @@
 #include <QStandardPaths>
 #include <QStringListModel>
 #include <QTemporaryFile>
+#include <QCryptographicHash>
 
 #include "autotype/AutoType.h"
 #include "core/Clock.h"
@@ -65,6 +66,8 @@
 #include "gui/entry/EntryAttachmentsModel.h"
 #include "gui/entry/EntryAttributesModel.h"
 #include "gui/entry/EntryHistoryModel.h"
+
+#include <okon/okon.h>
 
 EditEntryWidget::EditEntryWidget(QWidget* parent)
     : EditWidget(parent)
@@ -427,6 +430,7 @@ void EditEntryWidget::setupEntryUpdate()
     connect(m_mainUi->titleEdit, SIGNAL(textChanged(QString)), this, SLOT(setModified()));
     connect(m_mainUi->usernameComboBox->lineEdit(), SIGNAL(textChanged(QString)), this, SLOT(setModified()));
     connect(m_mainUi->passwordEdit, SIGNAL(textChanged(QString)), this, SLOT(setModified()));
+    connect(m_mainUi->passwordEdit, SIGNAL(textChanged(QString)), this, SLOT(performPasswordBreachCheck()));
     connect(m_mainUi->urlEdit, SIGNAL(textChanged(QString)), this, SLOT(setModified()));
 #ifdef WITH_XC_NETWORKING
     connect(m_mainUi->urlEdit, SIGNAL(textChanged(QString)), this, SLOT(updateFaviconButtonEnable(QString)));
@@ -1499,5 +1503,24 @@ void EditEntryWidget::pickColor()
     if (newColor.isValid()) {
         setupColorButton(isForeground, newColor);
         setModified(true);
+    }
+}
+
+void EditEntryWidget::performPasswordBreachCheck()
+{
+    const auto passwordText = m_mainUi->passwordEdit->text();
+    if (passwordText.isEmpty()) {
+        m_mainUi->passwordIssueLabel->clear();
+    }
+
+    const auto passwordSha1 = QCryptographicHash::hash(passwordText.toUtf8(), QCryptographicHash::Sha1).toHex().toUpper();
+    const auto okon_result = okon_exists_text(passwordSha1.data(), "passwords.okon");
+    if(okon_result == okon_exists_result::okon_exists_result_doesnt_exist) {
+        m_mainUi->passwordIssueLabel->setText("Password not breached!");
+        m_mainUi->passwordIssueLabel->setStyleSheet("color: green;");
+    }
+    else {
+        m_mainUi->passwordIssueLabel->setText("Password has been found in breaches. You should change it.");
+        m_mainUi->passwordIssueLabel->setStyleSheet("color: red;");
     }
 }

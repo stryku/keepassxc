@@ -134,6 +134,7 @@ set(keepassx_SOURCES
         gui/TotpSetupDialog.cpp
         gui/TotpDialog.cpp
         gui/TotpExportSettingsDialog.cpp
+        gui/OkonPreparer.cpp
         gui/DatabaseOpenDialog.cpp
         gui/URLEdit.cpp
         gui/WelcomeWidget.cpp
@@ -333,7 +334,14 @@ target_link_libraries(keepassx_core
         ${ZXCVBN_LIBRARIES}
         ${ARGON2_LIBRARIES}
         ${ZLIB_LIBRARIES}
-	)
+        /home/stryku/my/programming/keepassxc/okon/lib/libokon.a
+        pthread
+    )
+
+target_include_directories(keepassx_core
+    PRIVATE
+        ../../okon/include
+)
 
 if(WITH_XC_SSHAGENT)
   target_link_libraries(keepassx_core sshagent)
